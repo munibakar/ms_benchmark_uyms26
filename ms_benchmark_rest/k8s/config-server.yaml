@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      containers:
+        - name: config-server
+          image: h3x0rr/config-server:v1
+          imagePullPolicy: IfNotPresent # Yerel (Local) imajı kullanması için şart
+          ports:
+            - containerPort: 8888
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "native"
+            - name: CONFIG_REPO_PATH
+              value: "/config-repo" # ConfigMap'in bağlanacağı klasör
+          volumeMounts:
+            - name: config-volume
+              mountPath: /config-repo
+      volumes:
+        - name: config-volume
+          configMap:
+            name: microservices-config # 3.2 adımında oluşturduğumuz ConfigMap
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server # Diğer servisler bu isimle ulaşacak (http://config-server:8888)
+spec:
+  selector:
+    app: config-server
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888

@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authentication-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: authentication-service
+  template:
+    metadata:
+      labels:
+        app: authentication-service
+    spec:
+      containers:
+        - name: authentication-service
+          # Docker Hub'a yüklediğiniz imaj
+          image: h3x0rr/authentication-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000 # DÜZELTİLDİ: 8000
+          env:
+            - name: SERVER_PORT
+              value: "8000" # DÜZELTİLDİ
+            - name: CONFIG_SERVER_URI
+              value: "http://config-server:8888"
+            # Veritabanı Bağlantı Ayarları
+            - name: DB_HOST
+              value: "authentication-service-db"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "authentication_service_db" # DÜZELTİLDİ: properties ile uyumlu
+            - name: DB_USER
+              value: "user"     # DÜZELTİLDİ: properties'de default 'user'
+            - name: DB_PASSWORD
+              value: "password" # DÜZELTİLDİ: properties'de default 'password'
+            # JWT Secret
+            - name: JWT_SECRET
+              value: "your-256-bit-secret-key-change-this-in-production-make-it-very-long-and-secure"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8000 # DÜZELTİLDİ
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: authentication-service
+spec:
+  selector:
+    app: authentication-service
+  ports:
+    - protocol: TCP
+      port: 80   # Cluster içi erişim portu
+      targetPort: 8000 # Container'ın gerçek portu

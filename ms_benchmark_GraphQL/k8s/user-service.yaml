@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service
+  template:
+    metadata:
+      labels:
+        app: user-service
+    spec:
+      containers:
+        - name: user-service
+          image: h3x0rr/user-service:v1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+          env:
+            - name: SERVER_PORT
+              value: "9000"
+            - name: CONFIG_SERVER_URI
+              value: "http://config-server:8888"
+            # EUREKA İLE İLGİLİ HİÇBİR AYAR YOK ARTIK
+            - name: DB_HOST
+              value: "user-service-db" # K8s Service ismi
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "user_service_db"
+            - name: DB_USER
+              value: "user"
+            - name: DB_PASSWORD
+              value: "password"
+          livenessProbe: # Uygulama çalışıyor mu kontrolü
+            httpGet:
+              path: /api/users/health
+              port: 9000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service # Artık diğer servisler bu isme istek atacak
+spec:
+  selector:
+    app: user-service
+  ports:
+    - protocol: TCP
+      port: 80 # Kubernetes içi port
+      targetPort: 9000 # Container portu

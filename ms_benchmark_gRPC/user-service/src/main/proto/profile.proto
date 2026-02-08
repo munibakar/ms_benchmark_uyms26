@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package profileservice;
+
+option java_multiple_files = true;
+option java_package = "com.microservice.user_service.grpc.proto";
+option java_outer_classname = "ProfileProto";
+
+// Profile gRPC Service
+// User Service tarafından kullanılır  (profile listesi için)
+service ProfileGrpcService {
+    // Account ID'ye göre profilleri getir
+    rpc GetProfilesByAccountId(GetProfilesRequest) returns (ProfileListResponse);
+}
+
+// Get Profiles Request
+message GetProfilesRequest {
+    string account_id = 1;
+}
+
+// Profile Response (tek profil)
+message ProfileResponse {
+    int64 id = 1;
+    string profile_name = 2;
+    string avatar_url = 3;
+    bool is_child_profile = 4;
+}
+
+// Profile List Response
+message ProfileListResponse {
+    repeated ProfileResponse profiles = 1;
+}

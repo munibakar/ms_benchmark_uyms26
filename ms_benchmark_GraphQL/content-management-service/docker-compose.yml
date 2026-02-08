@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Content Management Service
+  content-management-service-db:
+    image: postgres:16-alpine
+    container_name: content-management-service-db
+    environment:
+      POSTGRES_DB: content_management_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5436:5432"
+    volumes:
+      - content-management-service-db-data:/var/lib/postgresql/data
+    networks:
+      - content-management-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d content_management_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Content Management Service Application
+  content-management-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: content-management-service
+    environment:
+      # Server Configuration
+      SERVER_PORT: 9200
+      
+      # Database Configuration
+      DB_HOST: content-management-service-db
+      DB_PORT: 5432
+      DB_NAME: content_management_db
+      DB_USER: user
+      DB_PASSWORD: password
+      
+      # Config Server Configuration
+      CONFIG_SERVER_URI: http://config-server:8888
+       
+      # CORS Configuration
+      CORS_ORIGINS: "*"
+    ports:
+      - "9200:9200"
+    networks:
+      - content-management-service-network
+      - microservices-network
+    depends_on:
+      content-management-service-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9200/api/contents/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  content-management-service-network:
+    driver: bridge
+  microservices-network:
+    external: true
+    name: microservices-network
+
+volumes:
+  content-management-service-db-data:
+    driver: local
+
+
+
+
+
+

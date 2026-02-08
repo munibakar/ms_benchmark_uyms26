@@ -1,0 +1,92 @@
+# Apollo Federation 2.0 Schema Extension
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@external", "@requires"])
+
+# ============== PROFILE ENTITY ==============
+# Profile entity - Bu servisin ana entity'si
+type Profile @key(fields: "id") {
+    id: ID!
+    accountId: String!
+    profileName: String!
+    avatarUrl: String
+    isChildProfile: Boolean!
+    maturityLevel: String!
+    language: String!
+    isPinProtected: Boolean!
+    isActive: Boolean!
+    isDefault: Boolean!
+    createdAt: String
+    updatedAt: String
+}
+
+# ============== USER ENTITY STUB ==============
+# User stub type - Gateway bu entity referansını user-service ile birleştirir
+type User @key(fields: "userId") {
+    userId: String!
+}
+
+# ============== USER ENTITY EXTENSION ==============
+# User entity'sini extend ederek profiles alanını ekliyoruz
+# Bu sayede tek sorgu ile user ve profilleri alınabilir
+extend type User {
+    profiles: [Profile!]!
+}
+
+# ============== QUERIES ==============
+type Query {
+    # Profile ID'ye göre profil getir
+    profile(id: ID!): Profile
+    
+    # Legacy query for Service Chain Test compatibility
+    getProfilesByAccountId(accountId: String!): [Profile]
+    
+    # Account ID'ye göre aktif profilleri getir
+    getActiveProfilesByAccountId(accountId: String!): [Profile!]!
+    
+    # Profile ID'ye göre profil getir
+    getProfileById(profileId: ID!): Profile
+    
+    # Account ID ve Profile ID'ye göre profil getir
+    getProfileByIdAndAccountId(profileId: ID!, accountId: String!): Profile
+    
+    # Varsayılan profili getir
+    getDefaultProfile(accountId: String!): Profile
+    
+    # Profil sayısını getir
+    getProfileCount(accountId: String!): Int!
+}
+
+# ============== MUTATIONS ==============
+type Mutation {
+    # Yeni profil oluştur
+    createProfile(input: CreateProfileInput!): Profile!
+    
+    # Profil güncelle
+    updateProfile(profileId: ID!, accountId: String!, input: UpdateProfileInput!): Profile!
+    
+    # Profil sil (soft delete)
+    deleteProfile(profileId: ID!, accountId: String!): Boolean!
+}
+
+# ============== INPUT TYPES ==============
+input CreateProfileInput {
+    accountId: String!
+    profileName: String!
+    avatarUrl: String
+    isChildProfile: Boolean
+    maturityLevel: String
+    language: String
+    isPinProtected: Boolean
+    pin: String
+    isDefault: Boolean
+}
+
+input UpdateProfileInput {
+    profileName: String
+    avatarUrl: String
+    isChildProfile: Boolean
+    maturityLevel: String
+    language: String
+    isPinProtected: Boolean
+    pin: String
+    isDefault: Boolean
+}

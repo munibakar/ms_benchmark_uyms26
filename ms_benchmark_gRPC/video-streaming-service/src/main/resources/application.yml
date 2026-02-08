@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: video-streaming-service
+  
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:9300}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Eureka Configuration
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka}
+#     register-with-eureka: true
+#     fetch-registry: true
+#   instance:
+#     prefer-ip-address: true
+#     lease-renewal-interval-in-seconds: 30
+#     lease-expiration-duration-in-seconds: 90
+
+# gRPC Client Configuration
+grpc:
+  client:
+    content-service:
+      address: dns:///${CONTENT_SERVICE_GRPC_HOST:content-management-service}:${CONTENT_SERVICE_GRPC_PORT:9290}
+      negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 10s
+    subscription-service:
+      address: dns:///${SUBSCRIPTION_SERVICE_GRPC_HOST:subscription-and-billing-service}:${SUBSCRIPTION_SERVICE_GRPC_PORT:9190}
+      negotiation-type: plaintext
+      enable-keep-alive: true
+      keep-alive-time: 30s
+      keep-alive-timeout: 10s
+
+

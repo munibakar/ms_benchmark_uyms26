@@ -1,0 +1,14 @@
+# mkdocs.yml
+
+site_name: Capstone Projesi Dokümantasyonu
+
+# Sadece tek bir ana sayfa menü öğesi oluşturuyoruz
+nav:
+    - Anasayfa: index.md
+    
+# Görünüm için Read the Docs temasını kullanıyoruz
+theme:
+    name: readthedocs
+
+# Dokümantasyon kaynak dosyalarının docs/ klasöründe olduğunu belirtiyoruz (Varsayılan)
+docs_dir: docs

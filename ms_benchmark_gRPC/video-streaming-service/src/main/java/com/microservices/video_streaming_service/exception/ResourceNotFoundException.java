@@ -1,0 +1,18 @@
+package com.microservices.video_streaming_service.exception;
+
+/**
+ * Resource Not Found Exception
+ * Kaynak bulunamadığında fırlatılır
+ */
+public class ResourceNotFoundException extends RuntimeException {
+    
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+
+
+
+
+
+

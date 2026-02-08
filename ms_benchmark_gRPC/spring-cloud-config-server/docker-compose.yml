@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  config-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: config-server
+    environment:
+      SERVER_PORT: 8888
+      CONFIG_REPO_PATH: /config-repo
+      SPRING_PROFILES_ACTIVE: native
+    ports:
+      - "8888:8888"
+    volumes:
+      - ../git-localconfig-repo:/config-repo:ro
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+networks:
+  microservices-network:
+    external: true
+

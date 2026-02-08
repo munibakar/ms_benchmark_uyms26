@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  subscription-billing-db:
+    image: postgres:16-alpine
+    container_name: subscription-billing-db
+    environment:
+      POSTGRES_DB: subscription_billing_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5435:5432"
+    volumes:
+      - subscription-billing-db-data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d subscription_billing_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  subscription-and-billing-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: subscription-and-billing-service
+    environment:
+      CONFIG_SERVER_URI: http://config-server:8888
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://naming-server:8761/eureka
+      DB_HOST: subscription-billing-db
+      DB_PORT: 5432
+      DB_NAME: subscription_billing_db
+      DB_USER: user
+      DB_PASSWORD: password
+      SERVER_PORT: 9100
+    depends_on:
+      subscription-billing-db:
+        condition: service_healthy
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+networks:
+  microservices-network:
+    external: true
+
+volumes:
+  subscription-billing-db-data:
+
+
+
+

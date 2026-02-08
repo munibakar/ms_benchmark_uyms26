@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: authentication-service-db
+    environment:
+      POSTGRES_DB: authentication_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - authentication_service_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  authentication-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: authentication-service
+    environment:
+      SERVER_PORT: 8000
+      CONFIG_SERVER_URI: http://config-server:8888
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: authentication_db
+      DB_USER: user
+      DB_PASSWORD: password
+      JWT_SECRET: your-256-bit-secret-key-change-this-in-production-make-it-very-long-and-secure
+      GOOGLE_CLIENT_ID: your-google-client-id-here
+      CORS_ORIGINS: "*"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_started
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    authentication_service_db_data:
+
+networks:
+  microservices-network:
+    external: true
+

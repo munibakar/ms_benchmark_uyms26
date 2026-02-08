@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: video-streaming-service
+  
+  cloud:
+    compatibility-verifier:
+      enabled: false
+
+  # GraphQL Configuration
+  graphql:
+    path: /graphql
+    graphiql:
+      enabled: true
+      path: /graphiql
+    schema:
+      printer:
+        enabled: true
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:9300}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# Eureka Configuration
+# eureka:
+#   client:
+#     service-url:
+#       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka}
+#     register-with-eureka: true
+#     fetch-registry: true
+#   instance:
+#     prefer-ip-address: true
+#     lease-renewal-interval-in-seconds: 30
+#     lease-expiration-duration-in-seconds: 90
+
+
+
+
+
+

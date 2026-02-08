@@ -1,0 +1,186 @@
+# Apollo Federation 2.0 Schema Extension
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@external"])
+
+# ============== ENUMS ==============
+enum ContentType {
+    MOVIE
+    TV_SERIES
+}
+
+enum ContentStatus {
+    DRAFT
+    PUBLISHED
+    COMING_SOON
+    ARCHIVED
+}
+
+enum RoleType {
+    ACTOR
+    DIRECTOR
+    WRITER
+    PRODUCER
+}
+
+
+# ============== USER ENTITY STUB ==============
+# User stub type - Gateway bu entity referansını user-service ile birleştirir
+type User @key(fields: "userId") {
+    userId: String!
+}
+
+# ============== USER ENTITY EXTENSION ==============
+# User entity'sini extend ederek recommendedContents alanını ekliyoruz
+extend type User {
+    recommendedContents: [Content!]!
+}
+
+# ============== CONTENT ENTITY ==============
+type Content @key(fields: "id") {
+    id: ID!
+    title: String!
+    description: String
+    contentType: ContentType!
+    releaseYear: Int
+    durationMinutes: Int
+    videoFilePath: String!
+    posterUrl: String
+    thumbnailUrl: String
+    trailerUrl: String
+    rating: Float
+    ageRating: String
+    language: String
+    status: ContentStatus!
+    isFeatured: Boolean
+    viewCount: Int
+    totalSeasons: Int
+    isActive: Boolean!
+    createdAt: String
+    updatedAt: String
+    genres: [Genre]
+    castCrew: [ContentCast]
+    seasons: [Season]
+}
+
+# ============== GENRE ENTITY ==============
+type Genre @key(fields: "id") {
+    id: ID!
+    name: String!
+    description: String
+    isActive: Boolean!
+    createdAt: String
+    updatedAt: String
+}
+
+# ============== CAST/CREW ENTITY ==============
+type CastCrew @key(fields: "id") {
+    id: ID!
+    name: String!
+    biography: String
+    profileImageUrl: String
+    roleType: RoleType!
+    dateOfBirth: String
+    nationality: String
+    isActive: Boolean!
+    createdAt: String
+    updatedAt: String
+}
+
+type ContentCast {
+    id: ID!
+    castCrewId: ID
+    castCrewName: String
+    characterName: String
+    roleType: RoleType
+    profileImageUrl: String
+}
+
+# ============== SEASON ENTITY ==============
+type Season @key(fields: "id") {
+    id: ID!
+    contentId: ID
+    seasonNumber: Int!
+    title: String
+    description: String
+    releaseYear: Int
+    posterUrl: String
+    isActive: Boolean!
+    createdAt: String
+    updatedAt: String
+    episodes: [Episode]
+}
+
+# ============== EPISODE ENTITY ==============
+type Episode @key(fields: "id") {
+    id: ID!
+    seasonId: ID
+    episodeNumber: Int!
+    title: String!
+    description: String
+    durationMinutes: Int
+    videoFilePath: String
+    thumbnailUrl: String
+    releaseDate: String
+    isActive: Boolean!
+    createdAt: String
+    updatedAt: String
+}
+
+# Legacy response type for Service Chain Test
+type ContentGraphQLResponse {
+    id: ID!
+    title: String
+    description: String
+    contentType: String
+    releaseYear: Int
+    durationMinutes: Int
+    videoFilePath: String
+    posterUrl: String
+    thumbnailUrl: String
+    trailerUrl: String
+    rating: Float
+    ageRating: String
+    language: String
+    status: String
+    isFeatured: Boolean
+    viewCount: Int
+    totalSeasons: Int
+    isActive: Boolean
+    createdAt: String
+    updatedAt: String
+}
+
+# ============== QUERIES ==============
+type Query {
+    # Simple query for Service Chain Test
+    getAllContents: [ContentGraphQLResponse]
+    
+    # Content entity query for federation
+    content(id: ID!): Content
+    
+    # Content Queries
+    getAllActiveContents: [Content!]!
+    getContentById(contentId: ID!): Content
+    getContentsByType(contentType: ContentType!): [Content!]!
+    getContentsByStatus(status: ContentStatus!): [Content!]!
+    getFeaturedContents: [Content!]!
+    searchContentsByTitle(title: String!): [Content!]!
+    
+    # Genre Queries
+    getAllActiveGenres: [Genre!]!
+    getGenreById(genreId: ID!): Genre
+    searchGenresByName(name: String!): [Genre!]!
+    
+    # CastCrew Queries
+    getAllActiveCastCrew: [CastCrew!]!
+    getCastCrewById(castCrewId: ID!): CastCrew
+    getCastCrewByRoleType(roleType: RoleType!): [CastCrew!]!
+    searchCastCrewByName(name: String!): [CastCrew!]!
+    
+    # Season Queries
+    getActiveSeasonsByContentId(contentId: ID!): [Season!]!
+    getSeasonById(seasonId: ID!): Season
+    
+    # Episode Queries
+    getActiveEpisodesBySeasonId(seasonId: ID!): [Episode!]!
+    getEpisodeById(episodeId: ID!): Episode
+}

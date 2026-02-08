@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Profile Service
+  profile-service-db:
+    image: postgres:16-alpine
+    container_name: profile-service-db
+    environment:
+      POSTGRES_DB: profile_service_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5434:5432"
+    volumes:
+      - profile-service-db-data:/var/lib/postgresql/data
+    networks:
+      - profile-service-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d profile_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Profile Service Application
+  profile-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: profile-service
+    environment:
+      # Server Configuration
+      SERVER_PORT: 9001
+      
+      # Database Configuration
+      DB_HOST: profile-service-db
+      DB_PORT: 5432
+      DB_NAME: profile_service_db
+      DB_USER: user
+      DB_PASSWORD: password
+      
+      # Config Server Configuration
+      CONFIG_SERVER_URI: http://spring-cloud-config-server:8888
+      
+      # Eureka Configuration
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://naming-server:8761/eureka
+      
+      # CORS Configuration
+      CORS_ORIGINS: "*"
+    ports:
+      - "9001:9001"
+    networks:
+      - profile-service-network
+      - microservices-network
+    depends_on:
+      profile-service-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9001/api/profiles/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  profile-service-network:
+    driver: bridge
+  microservices-network:
+    external: true
+    name: microservices-network
+
+volumes:
+  profile-service-db-data:
+    driver: local

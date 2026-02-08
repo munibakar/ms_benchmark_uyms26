@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: user-service
+  
+  cloud:
+    compatibility-verifier:
+      enabled: false
+  
+  # Database Configuration (H2 in-memory)
+  datasource:
+    url: jdbc:h2:mem:userdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# Server Configuration
+server:
+  port: ${SERVER_PORT:9000}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# gRPC Configuration
+grpc:
+  server:
+    port: ${GRPC_SERVER_PORT:9001}
+  client:
+    profile-service:
+      address: dns:///profile-service:9091
+      negotiationType: plaintext
+    subscription-service:
+      address: dns:///subscription-and-billing-service:9190
+      negotiationType: plaintext
+    payment-service:
+      address: dns:///subscription-and-billing-service:9190
+      negotiationType: plaintext
+    content-service:
+      address: dns:///content-management-service:9290
+      negotiationType: plaintext

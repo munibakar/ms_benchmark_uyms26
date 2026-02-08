@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package paymentservice;
+
+option java_multiple_files = true;
+option java_package = "com.microservice.user_service.grpc.proto";
+option java_outer_classname = "PaymentProto";
+
+// Payment gRPC Service
+// User Service tarafından kullanılır
+service PaymentGrpcService {
+    // Kullanıcının son ödemelerini getir
+    rpc GetRecentPayments(GetPaymentsRequest) returns (PaymentListResponse);
+}
+
+// Get Payments Request
+message GetPaymentsRequest {
+    string user_id = 1;
+}
+
+// Payment Response (tek ödeme)
+message PaymentResponse {
+    int64 id = 1;
+    double amount = 2;
+    string status = 3;
+    string payment_date = 4;
+}
+
+// Payment List Response
+message PaymentListResponse {
+    repeated PaymentResponse payments = 1;
+}

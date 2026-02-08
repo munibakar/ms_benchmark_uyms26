@@ -1,0 +1,62 @@
+# Apollo Federation 2.0 Schema Extension
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+# Authentication Service GraphQL Schema
+# Bu servis kullanıcı kimlik doğrulama işlemlerini yönetir
+
+# ============== TYPES ==============
+
+# Auth response - Login/Register sonrası dönen veri
+type AuthPayload {
+    token: String!
+    tokenExpiresAt: String
+    user: AuthUser!
+}
+
+# Auth User - Kimlik doğrulama için minimal user bilgisi
+type AuthUser @key(fields: "id", resolvable: false) {
+    id: ID!
+    email: String!
+    isGoogleUser: Boolean!
+}
+
+# ============== INPUT TYPES ==============
+
+input RegisterInput {
+    email: String!
+    password: String!
+    firstName: String
+    lastName: String
+}
+
+input LoginInput {
+    email: String!
+    password: String!
+}
+
+input GoogleLoginInput {
+    idToken: String!
+}
+
+# ============== QUERIES ==============
+
+type Query {
+    # Health check
+    authHealth: String!
+}
+
+# ============== MUTATIONS ==============
+
+type Mutation {
+    # Kullanıcı kaydı
+    register(input: RegisterInput!): AuthPayload!
+    
+    # Kullanıcı girişi
+    login(input: LoginInput!): AuthPayload!
+    
+    # Google ile giriş
+    googleLogin(input: GoogleLoginInput!): AuthPayload!
+    
+    # Çıkış
+    logout(userId: String!): Boolean!
+}

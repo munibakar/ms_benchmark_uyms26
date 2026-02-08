@@ -1,0 +1,459 @@
+# Tüm mikroservisleri birlikte çalıştırmak için kullanılabilir
+# Kullanım: docker stack deploy -c docker-compose.microservices.yml my-stack
+
+services:
+  # Config Server
+  config-server:
+    build:
+      context: ./spring-cloud-config-server
+      dockerfile: Dockerfile
+    image: h3x0rr/config-server:grpc
+    # container_name: config-server # Swarm modunda desteklenmez
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager # Dosya sistemine erişim gerektiği için ana makinede çalışmalı
+    environment:
+      SERVER_PORT: 8888
+      CONFIG_REPO_PATH: /config-repo
+      SPRING_PROFILES_ACTIVE: native
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./git-localconfig-repo:/config-repo:ro
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # PostgreSQL Database
+  authentication-service-db:
+    image: postgres:16-alpine
+    # container_name: authentication-service-db
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager # Veri bütünlüğü için ana makinede çalışmalı
+    environment:
+      POSTGRES_DB: authentication_service_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5433:5432"
+    volumes:
+      - authentication_service_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d authentication_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Authentication Service
+  authentication-service:
+    build:
+      context: ./authentication
+      dockerfile: Dockerfile
+    image: h3x0rr/authentication-service:grpc
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+    environment:
+      SERVER_PORT: 8000
+      CONFIG_SERVER_URI: http://config-server:8888
+      DB_HOST: authentication-service-db
+      DB_PORT: 5432
+      DB_NAME: authentication_service_db
+      DB_USER: user
+      DB_PASSWORD: password
+      JWT_SECRET: your-256-bit-secret-key-change-this-in-production-make-it-very-long-and-secure
+      GOOGLE_CLIENT_ID: your-google-client-id-here
+      CORS_ORIGINS: "*"
+      # gRPC Client Configuration
+      USER_SERVICE_GRPC_HOST: user-service
+      USER_SERVICE_GRPC_PORT: 9090
+    # ports: Doğrudan erişim engellendi - API Gateway üzerinden erişilmeli
+    # Eğer debug için gerekirse uncomment edin: - "8000:8000"
+    expose:
+      - "8000"
+    depends_on:
+      - config-server
+      - authentication-service-db
+      - user-service  # gRPC bağlantısı için user-service'e bağımlı
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8000/api/auth/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # User Service Database
+  user-service-db:
+    image: postgres:16-alpine
+    # container_name: user-service-db
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      POSTGRES_DB: user_service_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5434:5432"
+    volumes:
+      - user_service_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d user_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # User Service
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    image: h3x0rr/user-service:grpc
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    environment:
+      SERVER_PORT: 9000
+      CONFIG_SERVER_URI: http://config-server:8888
+      DB_HOST: user-service-db
+      DB_PORT: 5432
+      DB_NAME: user_service_db
+      DB_USER: user
+      DB_PASSWORD: password
+      CORS_ORIGINS: "*"
+      # gRPC Server Configuration
+      GRPC_SERVER_PORT: 9090
+    # ports: Doğrudan erişim engellendi - API Gateway üzerinden erişilmeli
+    # Eğer debug için gerekirse uncomment edin: - "9000:9000"
+    expose:
+      - "9000"
+      - "9090"  # gRPC port
+    depends_on:
+      - config-server
+      - user-service-db
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9000/api/users/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Subscription and Billing Service Database
+  subscription-billing-db:
+    image: postgres:16-alpine
+    # container_name: subscription-billing-db
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      POSTGRES_DB: subscription_billing_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5435:5432"
+    volumes:
+      - subscription_billing_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d subscription_billing_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Subscription and Billing Service
+  # ⚠️ GÜVENLIK: Port host'a expose edilmiyor - Sadece API Gateway üzerinden erişilebilir
+  subscription-and-billing-service:
+    build:
+      context: ./subscription-and-billing-service
+      dockerfile: Dockerfile
+    image: h3x0rr/subscription-service:grpc
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    environment:
+      SERVER_PORT: 9100
+      CONFIG_SERVER_URI: http://config-server:8888
+      DB_HOST: subscription-billing-db
+      DB_PORT: 5432
+      DB_NAME: subscription_billing_db
+      DB_USER: user
+      DB_PASSWORD: password
+      CORS_ORIGINS: "*"
+      # gRPC Server Configuration
+      GRPC_SERVER_PORT: 9190
+    # ports: Doğrudan erişim engellendi - API Gateway üzerinden erişilmeli
+    # Eğer debug için gerekirse uncomment edin: - "9100:9100"
+    expose:
+      - "9100"
+      - "9190"  # gRPC port
+    depends_on:
+      - config-server
+      - subscription-billing-db
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9100/api/subscription/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Profile Service Database
+  profile-service-db:
+    image: postgres:16-alpine
+    # container_name: profile-service-db
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      POSTGRES_DB: profile_service_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5436:5432"
+    volumes:
+      - profile_service_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d profile_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Profile Service
+  profile-service:
+    build:
+      context: ./profile-service
+      dockerfile: Dockerfile
+    image: h3x0rr/profile-service:grpc
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    environment:
+      SERVER_PORT: 9001
+      CONFIG_SERVER_URI: http://config-server:8888
+      DB_HOST: profile-service-db
+      DB_PORT: 5432
+      DB_NAME: profile_service_db
+      DB_USER: user
+      DB_PASSWORD: password
+      CORS_ORIGINS: "*"
+      # gRPC Server Configuration
+      GRPC_SERVER_PORT: 9091
+    # ports: Doğrudan erişim engellendi - API Gateway üzerinden erişilmeli
+    # Eğer debug için gerekirse uncomment edin: - "9001:9001"
+    expose:
+      - "9001"
+      - "9091"  # gRPC port
+    depends_on:
+      - config-server
+      - profile-service-db
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9001/api/profiles/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Content Management Service Database
+  content-management-service-db:
+    image: postgres:16-alpine
+    # container_name: content-management-service-db
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      POSTGRES_DB: content_management_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5437:5432"
+    volumes:
+      - content_management_service_db_data:/var/lib/postgresql/data
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d content_management_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Content Management Service
+  content-management-service:
+    build:
+      context: ./content-management-service
+      dockerfile: Dockerfile
+    image: h3x0rr/content-management-service:grpc
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+    environment:
+      SERVER_PORT: 9200
+      CONFIG_SERVER_URI: http://config-server:8888
+      DB_HOST: content-management-service-db
+      DB_PORT: 5432
+      DB_NAME: content_management_db
+      DB_USER: user
+      DB_PASSWORD: password
+      CORS_ORIGINS: "*"
+      # gRPC Server Configuration
+      GRPC_SERVER_PORT: 9290
+    # ports: Doğrudan erişim engellendi - API Gateway üzerinden erişilmeli
+    # Eğer debug için gerekirse uncomment edin: - "9200:9200"
+    expose:
+      - "9200"
+      - "9290"  # gRPC port
+    depends_on:
+      - config-server
+      - content-management-service-db
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9200/api/contents/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Video Streaming Service
+  # ⚠️ GÜVENLIK: Port host'a expose edilmiyor - Sadece API Gateway üzerinden erişilebilir
+  video-streaming-service:
+    build:
+      context: ./video-streaming-service
+      dockerfile: Dockerfile
+    image: h3x0rr/video-streaming-service:grpc
+    # Video dosyaları host'ta olduğu için bu servis manager node'da çalışmalı
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+    environment:
+      SERVER_PORT: 9300
+      CONFIG_SERVER_URI: http://config-server:8888
+      VIDEO_BASE_PATH: /videos
+    # ports: Doğrudan erişim engellendi - API Gateway üzerinden erişilmeli
+    # Eğer debug için gerekirse uncomment edin: - "9300:9300"
+    expose:
+      - "9300"
+    volumes:
+      - ./videos:/videos:ro
+    depends_on:
+      - config-server
+      - content-management-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9300/api/stream/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    image: h3x0rr/api-gateway:grpc
+    # container_name: api-gateway
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager # Gateway'i girişte (manager'da) tutmak genelde iyi pratiktir, opsiyonel.
+    environment:
+      SERVER_PORT: 8765
+      CONFIG_SERVER_URI: http://config-server:8888
+      JWT_SECRET: your-256-bit-secret-key-change-this-in-production-make-it-very-long-and-secure
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_ENABLED: "false"
+      SPRING_CLOUD_GATEWAY_DISCOVERY_LOCATOR_LOWER_CASE_SERVICE_ID: "true"
+    ports:
+      - "8765:8765"
+    depends_on:
+      - config-server
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8765/actuator/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  authentication_service_db_data:
+  user_service_db_data:
+  subscription_billing_db_data:
+  profile_service_db_data:
+  content_management_service_db_data:
+networks:
+  microservices-network:
+    driver: overlay # Swarm için overlay network şart
+    attachable: true

@@ -1,0 +1,47 @@
+# Apollo Federation 2.0 Schema Extension
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+# Video Streaming Service GraphQL Schema
+# NOT: Video streaming binary data olduğu için REST API olarak kalıyor
+# Bu schema sadece video metadata sorguları için kullanılır
+
+# ============== TYPES ==============
+
+type StreamingInfo @key(fields: "contentId") {
+    contentId: ID!
+    title: String!
+    videoFilePath: String!
+    contentType: String
+    isActive: Boolean!
+    streamingUrl: String!
+}
+
+type EpisodeStreamingInfo @key(fields: "episodeId") {
+    episodeId: ID!
+    title: String!
+    videoFilePath: String!
+    isActive: Boolean!
+    streamingUrl: String!
+}
+
+type SubscriptionStatus {
+    hasActiveSubscription: Boolean!
+    status: String
+    userId: String!
+}
+
+# ============== QUERIES ==============
+
+type Query {
+    # Video streaming için metadata sorguları
+    # Gerçek video streaming REST API üzerinden yapılır
+    
+    # Content streaming bilgisi
+    getContentStreamingInfo(contentId: ID!, userId: String!): StreamingInfo
+    
+    # Episode streaming bilgisi
+    getEpisodeStreamingInfo(episodeId: ID!, userId: String!): EpisodeStreamingInfo
+    
+    # Kullanıcının abonelik durumunu kontrol et
+    checkSubscriptionStatus(userId: String!): SubscriptionStatus!
+}

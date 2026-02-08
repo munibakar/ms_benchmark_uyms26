@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package userservice;
+
+option java_multiple_files = true;
+option java_package = "com.microservices.profile_service.grpc.proto";
+option java_outer_classname = "UserProfileProto";
+
+// User Profile gRPC Service
+// Profile Service tarafından kullanılır (user-service'e bağlanmak için)
+service UserProfileGrpcService {
+    // Yeni kullanıcı profili oluştur
+    rpc CreateUserProfile(CreateUserProfileRequest) returns (UserProfileResponse);
+    
+    // Kullanıcı ID'sine göre profil getir
+    rpc GetUserProfileByUserId(GetUserProfileRequest) returns (UserProfileResponse);
+}
+
+// Create User Profile Request
+message CreateUserProfileRequest {
+    string user_id = 1;
+    string email = 2;
+    string first_name = 3;
+    string last_name = 4;
+}
+
+// Get User Profile Request
+message GetUserProfileRequest {
+    string user_id = 1;
+}
+
+// User Profile Response
+message UserProfileResponse {
+    string user_id = 1;
+    string email = 2;
+    string first_name = 3;
+    string last_name = 4;
+    bool is_active = 5;
+    bool is_verified = 6;
+    string created_at = 7;
+    string updated_at = 8;
+}

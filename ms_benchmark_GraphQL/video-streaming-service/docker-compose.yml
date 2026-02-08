@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Video Streaming Service Application
+  video-streaming-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video-streaming-service
+    environment:
+      # Server Configuration
+      SERVER_PORT: 9300
+      
+      # Config Server Configuration
+      CONFIG_SERVER_URI: http://spring-cloud-config-server:8888
+      
+      # Eureka Configuration
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://naming-server:8761/eureka
+      
+      # Video Base Path Configuration
+      # Docker container içinde video dosyalarının bulunduğu dizin
+      VIDEO_BASE_PATH: /videos
+    # ports:
+    #   - "9300:9300" # Do NOT expose directly to host for security reasons. Access via API Gateway.
+    expose:
+      - "9300" # Expose only to linked services within the Docker network
+    networks:
+      - microservices-network
+    volumes:
+      # Video dosyalarını host'tan container'a mount et
+      # Ana kod dizinindeki videos klasörünü kullan (bir üst dizinde)
+      - ../videos:/videos:ro
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9300/api/stream/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+networks:
+  microservices-network:
+    external: true
+    name: microservices-network
+

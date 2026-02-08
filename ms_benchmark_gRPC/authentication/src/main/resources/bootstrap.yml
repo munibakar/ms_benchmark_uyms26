@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: authentication
+  
+  cloud:
+    config:
+      enabled: true
+      uri: ${CONFIG_SERVER_URI:http://localhost:8888}
+      fail-fast: true
+      retry:
+        initial-interval: 3000
+        max-attempts: 20
+        max-interval: 10000
+        multiplier: 1.5
+

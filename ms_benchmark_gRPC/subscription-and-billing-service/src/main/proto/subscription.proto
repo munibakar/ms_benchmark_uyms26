@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package subscriptionservice;
+
+option java_multiple_files = true;
+option java_package = "com.microservices.subscription_and_billing_service.grpc.proto";
+option java_outer_classname = "SubscriptionProto";
+
+// Subscription gRPC Service
+// Profile Service ve Video Streaming Service tarafından kullanılır
+service SubscriptionGrpcService {
+    // Kullanıcının aktif aboneliğini getir
+    rpc GetActiveSubscription(GetActiveSubscriptionRequest) returns (SubscriptionResponse);
+}
+
+// Get Active Subscription Request
+message GetActiveSubscriptionRequest {
+    string user_id = 1;
+}
+
+// Subscription Plan Response (nested message)
+message SubscriptionPlanResponse {
+    int64 id = 1;
+    string plan_name = 2;
+    string display_name = 3;
+    string description = 4;
+    string monthly_price = 5;
+    string yearly_price = 6;
+    int32 max_screens = 7;
+    int32 max_profiles = 8;
+    string video_quality = 9;
+    bool download_available = 10;
+    bool ads_included = 11;
+    bool is_active = 12;
+}
+
+// Subscription Response
+message SubscriptionResponse {
+    int64 id = 1;
+    string user_id = 2;
+    SubscriptionPlanResponse plan = 3;
+    string status = 4;
+    string billing_cycle = 5;
+    string start_date = 6;
+    string end_date = 7;
+    string cancelled_at = 8;
+    string cancellation_reason = 9;
+    bool auto_renew = 10;
+    string next_billing_date = 11;
+    string created_at = 12;
+    string updated_at = 13;
+}

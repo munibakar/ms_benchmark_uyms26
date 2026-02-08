@@ -1,0 +1,169 @@
+# Apollo Federation 2.0 Schema Extension
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@external"])
+
+# ============== SUBSCRIPTION ENTITY ==============
+type Subscription @key(fields: "id") {
+    id: ID!
+    userId: String!
+    plan: SubscriptionPlan
+    status: String!
+    billingCycle: String!
+    startDate: String
+    endDate: String
+    cancelledAt: String
+    cancellationReason: String
+    autoRenew: Boolean!
+    nextBillingDate: String
+    createdAt: String
+    updatedAt: String
+}
+
+# ============== BILLING HISTORY ENTITY ==============
+type BillingHistory @key(fields: "id") {
+    id: ID!
+    userId: String!
+    subscriptionId: ID
+    planName: String
+    amount: Float!
+    currency: String!
+    paymentStatus: String!
+    paymentMethod: String
+    transactionId: String
+    paymentDate: String
+    billingPeriodStart: String
+    billingPeriodEnd: String
+    invoiceUrl: String
+    failureReason: String
+    createdAt: String
+}
+
+# ============== USER ENTITY STUB ==============
+# User stub type - Gateway bu entity referansını user-service ile birleştirir
+type User @key(fields: "userId") {
+    userId: String!
+}
+
+# ============== USER ENTITY EXTENSION ==============
+# User entity'sini extend ederek subscription ve billingHistory ekliyoruz
+extend type User {
+    subscription: Subscription
+    billingHistory: [BillingHistory!]!
+}
+
+# ============== TYPES ==============
+type SubscriptionPlan {
+    id: ID!
+    planName: String!
+    displayName: String!
+    description: String
+    monthlyPrice: Float!
+    yearlyPrice: Float!
+    maxScreens: Int!
+    maxProfiles: Int!
+    videoQuality: String!
+    downloadAvailable: Boolean!
+    adsIncluded: Boolean!
+    isActive: Boolean!
+}
+
+type PaymentMethod {
+    id: ID!
+    type: String!
+    cardHolderName: String!
+    lastFourDigits: String!
+    cardBrand: String!
+    expiryMonth: String!
+    expiryYear: String!
+    isDefault: Boolean!
+    isActive: Boolean!
+    createdAt: String
+}
+
+# Legacy response types for backward compatibility
+type SubscriptionGraphQLResponse {
+    id: ID!
+    userId: String
+    planName: String
+    status: String
+    billingCycle: String
+    startDate: String
+    endDate: String
+    cancelledAt: String
+    cancellationReason: String
+    autoRenew: Boolean
+    nextBillingDate: String
+    createdAt: String
+    updatedAt: String
+}
+
+type PaymentGraphQLResponse {
+    id: ID!
+    userId: String
+    subscriptionId: ID
+    planName: String
+    amount: Float
+    currency: String
+    paymentStatus: String
+    paymentMethod: String
+    transactionId: String
+    paymentDate: String
+    billingPeriodStart: String
+    billingPeriodEnd: String
+    invoiceUrl: String
+    failureReason: String
+    createdAt: String
+}
+
+# ============== QUERIES ==============
+type Query {
+    # Legacy queries for Service Chain Test compatibility
+    getActiveSubscription(userId: String!): SubscriptionGraphQLResponse
+    getBillingHistory(userId: String!): [PaymentGraphQLResponse]
+    
+    # Subscription Queries
+    getMySubscription(userId: String!): Subscription
+    getMySubscriptions(userId: String!): [Subscription!]!
+    
+    # Subscription Plan Queries
+    getAllPlans: [SubscriptionPlan!]!
+    
+    # Payment Method Queries
+    getPaymentMethods(userId: String!): [PaymentMethod!]!
+    
+    # Billing Queries
+    getDetailedBillingHistory(userId: String!): [BillingHistory!]!
+    getSuccessfulPayments(userId: String!): [BillingHistory!]!
+}
+
+# ============== MUTATIONS ==============
+type Mutation {
+    # Subscription Mutations
+    subscribe(userId: String!, input: SubscribeInput!): Subscription!
+    cancelSubscription(userId: String!, input: CancelSubscriptionInput): Subscription!
+    
+    # Payment Method Mutations
+    addPaymentMethod(userId: String!, input: AddPaymentMethodInput!): PaymentMethod!
+    deletePaymentMethod(userId: String!, id: ID!): Boolean!
+}
+
+# ============== INPUT TYPES ==============
+input SubscribeInput {
+    planName: String!
+    billingCycle: String!
+    paymentMethodId: ID
+}
+
+input CancelSubscriptionInput {
+    reason: String
+    immediate: Boolean
+}
+
+input AddPaymentMethodInput {
+    cardHolderName: String!
+    cardNumber: String!
+    expiryMonth: String!
+    expiryYear: String!
+    cvv: String!
+    cardBrand: String!
+    setAsDefault: Boolean
+}

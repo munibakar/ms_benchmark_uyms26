@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package contentservice;
+
+option java_multiple_files = true;
+option java_package = "com.microservice.user_service.grpc.proto";
+option java_outer_classname = "ContentProto";
+
+// Content gRPC Service
+// User Service tarafından kullanılır
+service ContentGrpcService {
+    // Content ID'ye göre içerik bilgisini getir
+    rpc GetContentById(GetContentRequest) returns (ContentResponse);
+    
+    // Tüm içerikleri getir (dashboard için)
+    rpc GetAllContents(GetAllContentsRequest) returns (ContentListResponse);
+}
+
+// Get Content Request
+message GetContentRequest {
+    int64 content_id = 1;
+}
+
+// Content Response
+message ContentResponse {
+    int64 id = 1;
+    string title = 2;
+    string description = 3;
+    string content_type = 4;
+    int32 release_year = 5;
+    int32 duration_minutes = 6;
+    string video_file_path = 7;
+    string poster_url = 8;
+    string thumbnail_url = 9;
+    string trailer_url = 10;
+    double rating = 11;
+    string age_rating = 12;
+    string language = 13;
+    string status = 14;
+    bool is_featured = 15;
+    int64 view_count = 16;
+    int32 total_seasons = 17;
+    bool is_active = 18;
+    string created_at = 19;
+    string updated_at = 20;
+}
+
+// Get All Contents Request with Pagination
+message GetAllContentsRequest {
+    int32 page = 1;
+    int32 size = 2;
+}
+
+// Content List Response
+message ContentListResponse {
+    repeated ContentResponse contents = 1;
+}

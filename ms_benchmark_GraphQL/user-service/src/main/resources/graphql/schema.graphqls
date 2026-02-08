@@ -1,0 +1,135 @@
+# Apollo Federation 2.0 Schema Extension
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@shareable"])
+
+# ============== USER ENTITY (Primary) ==============
+# User entity - Ana entity, diğer servisler bunu extend edecek
+type User @key(fields: "userId") {
+    id: ID!
+    userId: String!
+    email: String!
+    firstName: String
+    lastName: String
+    phoneNumber: String
+    dateOfBirth: String
+    profilePictureUrl: String
+    bio: String
+    country: String
+    city: String
+    address: String
+    postalCode: String
+    isActive: Boolean!
+    isVerified: Boolean!
+    createdAt: String
+    updatedAt: String
+}
+
+# ============== QUERIES ==============
+type Query {
+    # Kullanıcı bilgilerini getir (userId ile)
+    user(id: ID!): User
+    
+    # Kullanıcı bilgilerini getir (userId string ile - legacy)
+    getUserProfile(userId: String!): User
+    
+    # Kullanıcı bilgilerini getir (email ile)
+    getUserProfileByEmail(email: String!): User
+    
+    # Tüm kullanıcı profillerini listele
+    getAllUserProfiles: [User!]!
+    
+    # Dashboard - Service Chain Test Query
+    # 4 farklı servise GraphQL çağrısı yapar (Profile, Subscription, Billing, Content)
+    dashboard(userId: String!): DashboardResponse!
+}
+
+# ============== MUTATIONS ==============
+type Mutation {
+    # Yeni kullanıcı profili oluştur
+    createUserProfile(input: CreateUserProfileInput!): User!
+    
+    # Kullanıcı profilini güncelle
+    updateUserProfile(userId: String!, input: UpdateUserProfileInput!): User!
+    
+    # Kullanıcı profilini sil (soft delete)
+    deleteUserProfile(userId: String!): Boolean!
+}
+
+# ============== INPUT TYPES ==============
+input CreateUserProfileInput {
+    userId: String!
+    email: String!
+    firstName: String!
+    lastName: String!
+}
+
+input UpdateUserProfileInput {
+    firstName: String
+    lastName: String
+    phoneNumber: String
+    dateOfBirth: String
+    profilePictureUrl: String
+    bio: String
+    country: String
+    city: String
+    address: String
+    postalCode: String
+}
+
+# ============== DASHBOARD TYPES (Service Chain Test) ==============
+type DashboardResponse {
+    user: DashboardUserInfo
+    profiles: [DashboardProfileInfo!]
+    subscription: DashboardSubscriptionInfo
+    recentPayments: [DashboardPaymentInfo!]
+    recommendedContents: [DashboardContentInfo!]
+    watchHistory: DashboardWatchHistoryInfo
+    fetchTimeMs: DashboardFetchTimeInfo
+}
+
+type DashboardUserInfo {
+    userId: String!
+    email: String!
+    firstName: String
+    lastName: String
+}
+
+type DashboardProfileInfo {
+    id: ID!
+    profileName: String
+    avatarUrl: String
+    isChildProfile: Boolean
+}
+
+type DashboardSubscriptionInfo {
+    id: ID!
+    planName: String
+    status: String
+    billingCycle: String
+}
+
+type DashboardPaymentInfo {
+    id: ID!
+    amount: Float
+    status: String
+    paymentDate: String
+}
+
+type DashboardContentInfo {
+    id: ID!
+    title: String
+    contentType: String
+}
+
+type DashboardWatchHistoryInfo {
+    totalWatched: Int
+    recentWatchCount: Int
+    lastWatchedDate: String
+}
+
+type DashboardFetchTimeInfo {
+    profiles: Int
+    subscription: Int
+    billing: Int
+    contents: Int
+    total: Int
+}
