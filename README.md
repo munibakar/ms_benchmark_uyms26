@@ -119,7 +119,43 @@ docker swarm init
 
 ---
 
-### Step 3: Build and Deploy
+### Step 3: Create the `videos` Folder (Required for Video Streaming Service)
+
+The **Video Streaming Service** streams video files from the host machine via a Docker volume mount (`./videos:/videos:ro`). You must create a `videos/` directory **with the following structure** inside the project folder you want to run **before deploying**.
+
+```
+videos/
+├── movies/
+│   ├── movie-1.mp4
+│   └── movie-2.mp4
+└── series/
+    ├── series-1/
+    │   └── episode-1.mp4
+    └── series-2/
+        └── episode-1.mp4
+```
+
+Create the directory for the version you want to run:
+
+```bash
+# For REST version:
+mkdir -p ms_benchmark_rest/videos/movies ms_benchmark_rest/videos/series
+
+# For gRPC version:
+mkdir -p ms_benchmark_gRPC/videos/movies ms_benchmark_gRPC/videos/series
+
+# For GraphQL version:
+mkdir -p ms_benchmark_GraphQL/videos/movies ms_benchmark_GraphQL/videos/series
+```
+
+Place your `.mp4` video files inside the appropriate subdirectories (`movies/` or `series/`). The service will serve them via the `/api/stream/` endpoint.
+
+> [!WARNING]
+> If the `videos/` folder does not exist, the `video-streaming-service` container will **fail to start** or will not be able to serve any video content. Docker will not automatically create this directory.
+
+---
+
+### Step 4: Build and Deploy
 
 Navigate to the directory of the version you want to run and follow the steps below.
 
@@ -127,6 +163,8 @@ Navigate to the directory of the version you want to run and follow the steps be
 > All three projects use the **same ports** (8765, 8888, 5433–5437, etc.), so you can only run **one version at a time**. Stop the current version before starting another.
 
 #### 🔵 Option A — REST Version
+
+> Make sure `ms_benchmark_rest/videos/` exists before deploying (see Step 3).
 
 ```bash
 cd ms_benchmark_rest
@@ -140,6 +178,8 @@ docker stack deploy -c docker-compose.microservices.yml ms-rest
 
 #### 🟢 Option B — gRPC Version
 
+> Make sure `ms_benchmark_gRPC/videos/` exists before deploying (see Step 3).
+
 ```bash
 cd ms_benchmark_gRPC
 
@@ -151,6 +191,8 @@ docker stack deploy -c docker-compose.microservices.yml ms-grpc
 ```
 
 #### 🟣 Option C — GraphQL Version
+
+> Make sure `ms_benchmark_GraphQL/videos/` exists before deploying (see Step 3).
 
 ```bash
 cd ms_benchmark_GraphQL
@@ -167,7 +209,7 @@ docker stack deploy -c docker-compose.microservices.yml ms-graphql
 
 ---
 
-### Step 4: Verify Service Health
+### Step 5: Verify Service Health
 
 After deployment, wait for all services to come up and check their status:
 
@@ -221,7 +263,7 @@ curl http://localhost:4000/health
 
 ---
 
-### Step 5: Test the API
+### Step 6: Test the API
 
 All services are accessible through the **API Gateway** (`:8765`). Below is the basic usage flow:
 
@@ -290,7 +332,7 @@ http://localhost:4000/graphql
 
 ---
 
-### Step 6: Stop the Project
+### Step 7: Stop the Project
 
 ```bash
 # Remove the stack:
@@ -415,6 +457,22 @@ docker stop $(docker ps -q)
 
 ```bash
 docker service logs ms-graphql_graphql-gateway --follow
+```
+
+### Issue: Video Streaming Service fails to start
+
+**Cause:** The `videos/` directory does not exist in the project root. The `docker-compose.microservices.yml` maps `./videos:/videos:ro`, and if this folder is missing, Docker cannot create the volume mount.
+
+**Solution:** Create the missing directory:
+
+```bash
+mkdir -p videos
+```
+
+Then redeploy:
+
+```bash
+docker stack deploy -c docker-compose.microservices.yml ms-rest  # or ms-grpc, ms-graphql
 ```
 
 ### Issue: Maven dependency errors during Docker build
