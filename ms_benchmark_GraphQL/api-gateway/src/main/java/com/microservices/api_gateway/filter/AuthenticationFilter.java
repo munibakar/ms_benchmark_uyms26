@@ -111,19 +111,18 @@ public class AuthenticationFilter implements GatewayFilter {
         for (String publicPath : publicPaths) {
             // Direkt eşleşme (örn: /api/subscription/health)
             if (path.equals(publicPath) || path.startsWith(publicPath + "/")) {
-                log.debug("✅ Public endpoint matched: {} -> {}", path, publicPath);
+                log.debug("Public endpoint matched: {} -> {}", path, publicPath);
                 return true;
             }
             
             // Service prefix'li eşleşme kontrolü
             // Örn: /subscription/api/subscription/health için /api/subscription/health kontrolü
-            // Path'i service ismiyle başlıyorsa, service ismini çıkar ve tekrar kontrol et
             if (path.contains("/")) {
-                String[] parts = path.split("/", 3); // ["", "subscription", "api/subscription/health"]
+                String[] parts = path.split("/", 3); 
                 if (parts.length >= 3) {
-                    String pathWithoutService = "/" + parts[2]; // "/api/subscription/health"
+                    String pathWithoutService = "/" + parts[2]; 
                     if (pathWithoutService.equals(publicPath) || pathWithoutService.startsWith(publicPath + "/")) {
-                        log.debug("✅ Public endpoint matched (with service prefix): {} -> {}", path, publicPath);
+                        log.debug("Public endpoint matched (with service prefix): {} -> {}", path, publicPath);
                         return true;
                     }
                 }

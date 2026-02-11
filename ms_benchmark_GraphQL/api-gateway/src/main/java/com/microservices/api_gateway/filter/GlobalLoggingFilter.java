@@ -126,16 +126,16 @@ public class GlobalLoggingFilter implements GlobalFilter, Ordered {
     private void logResponse(String requestId, org.springframework.http.HttpStatusCode statusCode, long duration) {
         StringBuilder logMsg = new StringBuilder();
         logMsg.append("\n========================================\n");
-        logMsg.append("📤 OUTGOING RESPONSE\n");
+        logMsg.append("OUTGOING RESPONSE\n");
         logMsg.append("========================================\n");
-        logMsg.append(String.format("🆔 Request ID: %s\n", requestId));
+        logMsg.append(String.format("Request ID: %s\n", requestId));
         
         if (statusCode != null) {
             String statusEmoji = getStatusEmoji(statusCode.value());
-            logMsg.append(String.format("📊 Status: %s %s\n", statusCode.value(), statusEmoji));
+            logMsg.append(String.format("Status: %s %s\n", statusCode.value(), statusEmoji));
         }
         
-        logMsg.append(String.format("⏱️  Duration: %d ms\n", duration));
+        logMsg.append(String.format("Duration: %d ms\n", duration));
         logMsg.append("========================================");
         
         // Status code'a göre log level belirle

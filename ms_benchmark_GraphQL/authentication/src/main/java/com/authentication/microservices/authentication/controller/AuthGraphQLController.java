@@ -29,14 +29,13 @@ public class AuthGraphQLController {
         this.authService = authService;
     }
 
-    // ============== Queries ==============
 
     @QueryMapping
     public String authHealth() {
         return "Authentication Service is running!";
     }
 
-    // ============== Mutations ==============
+ 
 
     /**
      * GraphQL Mutation: register
