@@ -1,4 +1,4 @@
-# 🎬 Microservices Benchmark — REST vs gRPC vs GraphQL
+# A Comparative Analysis of gRPC, GraphQL, and REST for Synchronous Microservice Communication: Benchmarking a Video Streaming Architecture
 
 This project implements the same **video streaming platform** (Netflix-clone) microservices architecture using three different communication protocols, enabling a direct performance comparison.
 
@@ -10,7 +10,7 @@ This project implements the same **video streaming platform** (Netflix-clone) mi
 
 ---
 
-## 📐 Architecture Overview
+## Architecture Overview
 
 All three projects share the **same 6 microservices** and infrastructure components:
 
@@ -57,7 +57,7 @@ All three projects share the **same 6 microservices** and infrastructure compone
 
 ---
 
-## ⚙️ Technology Stack
+## Technology Stack
 
 | Layer | Technology |
 |---|---|
@@ -72,7 +72,7 @@ All three projects share the **same 6 microservices** and infrastructure compone
 
 ---
 
-## 🚀 Getting Started — Step-by-Step Guide
+## Getting Started — Step-by-Step Guide
 
 ### Prerequisites
 
@@ -162,7 +162,7 @@ Navigate to the directory of the version you want to run and follow the steps be
 > [!WARNING]
 > All three projects use the **same ports** (8765, 8888, 5433–5437, etc.), so you can only run **one version at a time**. Stop the current version before starting another.
 
-#### 🔵 Option A — REST Version
+#### Option A — REST Version
 
 > Make sure `ms_benchmark_rest/videos/` exists before deploying (see Step 3).
 
@@ -176,7 +176,7 @@ docker compose -f docker-compose.microservices.yml build
 docker stack deploy -c docker-compose.microservices.yml ms-rest
 ```
 
-#### 🟢 Option B — gRPC Version
+#### Option B — gRPC Version
 
 > Make sure `ms_benchmark_gRPC/videos/` exists before deploying (see Step 3).
 
@@ -190,7 +190,7 @@ docker compose -f docker-compose.microservices.yml build
 docker stack deploy -c docker-compose.microservices.yml ms-grpc
 ```
 
-#### 🟣 Option C — GraphQL Version
+#### Option C — GraphQL Version
 
 > Make sure `ms_benchmark_GraphQL/videos/` exists before deploying (see Step 3).
 
@@ -360,7 +360,7 @@ docker swarm leave --force
 
 ---
 
-## 📂 Project Structure (Common Across All Projects)
+## Project Structure (Common Across All Projects)
 
 ```
 ms_benchmark_<protocol>/
@@ -419,7 +419,7 @@ ms_benchmark_<protocol>/
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Issue: Services won't start / keep restarting
 
@@ -485,7 +485,7 @@ docker compose -f docker-compose.microservices.yml build --no-cache
 
 ---
 
-## 🔄 Alternative: Running with Docker Compose (Without Swarm)
+## Alternative: Running with Docker Compose (Without Swarm)
 
 If you prefer not to use Docker Swarm, you can run the project with standard Docker Compose by removing Swarm-specific configurations (`deploy`, `placement`, `constraints`) from `docker-compose.microservices.yml`:
 
@@ -504,7 +504,7 @@ docker compose -f docker-compose.microservices.yml up -d --build
 
 ---
 
-## 📊 Performance Testing
+## Performance Testing
 
 These projects are designed for performance benchmarking with JMeter. To run performance tests:
 
@@ -515,6 +515,6 @@ These projects are designed for performance benchmarking with JMeter. To run per
 
 ---
 
-## 📜 License
+## License
 
 This project was developed for academic research and benchmarking purposes.
