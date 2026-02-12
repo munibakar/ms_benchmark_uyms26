@@ -502,19 +502,6 @@ docker compose -f docker-compose.microservices.yml up -d --build
 >     driver: bridge   # change from overlay to bridge
 > ```
 
----
-
-## Performance Testing
-
-These projects are designed for performance benchmarking with JMeter. To run performance tests:
-
-1. Download and install [Apache JMeter](https://jmeter.apache.org/)
-2. Open the relevant `.jmx` test plan file in JMeter
-3. Deploy each version one at a time and run the same test scenario
-4. Compare results (throughput, latency, error rate)
-
----
-
 ## License
 
 This project was developed for academic research and benchmarking purposes.
